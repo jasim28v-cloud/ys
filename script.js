@@ -1,12 +1,9 @@
-// script.js - Complete system with auth, subscriptions, and Cloudinary upload
+// script.js - Fixed Age Gate
 
-// Global state
-let currentUser = null;
-let userSubscription = 'free';
 const ADMIN_EMAIL = 'jasim28v@gmail.com';
-
-// Cloudinary configuration - Using from firebase-config.js
-const CLOUDINARY_UPLOAD_PRESET = 'playboytv_upload'; // أنشئيه في لوحة تحكم Cloudinary
+let currentUser = null;
+let isAdmin = false;
+let uploadWidget = null;
 
 // DOM Elements
 const ageGate = document.getElementById('ageGate');
@@ -21,326 +18,250 @@ const subBadge = document.getElementById('subBadge');
 const videoGrid = document.getElementById('videoGrid');
 const uploadSection = document.getElementById('uploadSection');
 
-// Age verification
-ageCheck.addEventListener('change', () => {
-    enterBtn.disabled = !ageCheck.checked;
+// ========== AGE VERIFICATION FIX ==========
+// Enable/disable enter button based on checkbox
+ageCheck.addEventListener('change', function() {
+  enterBtn.disabled = !this.checked;
+  console.log('Checkbox changed:', this.checked);
 });
 
-enterBtn.addEventListener('click', () => {
-    if (ageCheck.checked) {
-        ageGate.style.display = 'none';
-        mainContent.style.display = 'block';
-        localStorage.setItem('age_verified', 'true');
-        loadVideos();
-    }
+// Enter site button click
+enterBtn.addEventListener('click', function() {
+  if (ageCheck.checked) {
+    console.log('Entering site...');
+    ageGate.style.display = 'none';
+    mainContent.style.display = 'block';
+    localStorage.setItem('age_verified', 'true');
+    loadVideos();
+  }
 });
 
 // Check if already verified
 if (localStorage.getItem('age_verified') === 'true') {
-    ageGate.style.display = 'none';
-    mainContent.style.display = 'block';
-    loadVideos();
+  ageGate.style.display = 'none';
+  mainContent.style.display = 'block';
+  loadVideos();
+} else {
+  ageGate.style.display = 'flex';
+  mainContent.style.display = 'none';
+  enterBtn.disabled = true;
 }
 
-// Auth state observer
+// ========== AUTH ==========
 auth.onAuthStateChanged(user => {
-    if (user) {
-        currentUser = user;
-        authContainer.style.display = 'none';
-        userDisplay.style.display = 'flex';
-        userEmailDisplay.textContent = user.email;
-        userInitial.textContent = user.email.charAt(0).toUpperCase();
-        
-        // Check subscription
-        database.ref('subscriptions/' + user.uid).once('value').then(snapshot => {
-            userSubscription = snapshot.val()?.plan || 'free';
-            subBadge.textContent = userSubscription === 'premium' ? 'Premium' : 
-                                  userSubscription === 'yearly' ? 'Yearly VIP' : 'Free';
-            subBadge.style.background = userSubscription !== 'free' ? '#d4af37' : '#666';
-            
-            // Show upload section for admin
-            if (user.email === ADMIN_EMAIL) {
-                uploadSection.classList.remove('hidden');
-            }
-        });
-        
-        loadVideos();
-    } else {
-        currentUser = null;
-        authContainer.style.display = 'flex';
-        userDisplay.style.display = 'none';
-        uploadSection.classList.add('hidden');
+  if (user) {
+    currentUser = user;
+    isAdmin = user.email === ADMIN_EMAIL;
+    
+    authContainer.style.display = 'none';
+    userDisplay.style.display = 'flex';
+    userEmailDisplay.textContent = user.email;
+    userInitial.textContent = user.email.charAt(0).toUpperCase();
+    
+    if (isAdmin) {
+      document.body.classList.add('is-admin');
+      uploadSection.classList.remove('hidden');
+      console.log('✅ Admin logged in');
     }
+    
+    document.body.classList.add('logged-in');
+    
+    database.ref('subscriptions/' + user.uid).once('value').then(snapshot => {
+      const plan = snapshot.val()?.plan || 'free';
+      subBadge.textContent = plan === 'premium' ? 'Premium' : plan === 'yearly' ? 'Yearly VIP' : 'Free';
+      subBadge.style.background = plan !== 'free' ? '#d4af37' : '#666';
+    });
+  } else {
+    currentUser = null;
+    isAdmin = false;
+    authContainer.style.display = 'flex';
+    userDisplay.style.display = 'none';
+    uploadSection.classList.add('hidden');
+    document.body.classList.remove('logged-in', 'is-admin');
+  }
 });
 
-// Load videos from Firebase
+// ========== VIDEOS ==========
 function loadVideos() {
-    database.ref('videos').once('value').then(snapshot => {
-        const videos = snapshot.val();
-        renderVideos(videos);
-    });
+  database.ref('videos').once('value').then(snapshot => {
+    const videos = snapshot.val();
+    renderVideos(videos);
+  });
 }
 
 function renderVideos(videos) {
-    if (!videos) {
-        videoGrid.innerHTML = '<p style="color:#aaa; grid-column: 1/-1; text-align: center; padding: 50px;">📹 No videos yet. Admin can upload content.</p>';
-        return;
-    }
-    
-    let html = '';
-    Object.entries(videos).forEach(([id, video]) => {
-        const canWatch = video.premiumOnly ? (userSubscription !== 'free' || currentUser?.email === ADMIN_EMAIL) : true;
-        
-        html += `
-            <div class="video-card" onclick="${canWatch ? `playVideo('${video.url}', '${video.title}')` : 'showUpgradePrompt()'}">
-                <div class="thumbnail" style="background-image: url('${video.thumbnail || 'https://via.placeholder.com/400x300/1a1a2e/d4af37?text=PlayboyTV'}')">
-                    <i class="fas fa-play-circle play-icon"></i>
-                    ${video.premiumOnly ? '<span style="position:absolute; top:10px; right:10px;" class="premium-badge">⭐ PREMIUM</span>' : ''}
-                </div>
-                <div class="video-info">
-                    <div class="video-title">${video.title}</div>
-                    <div class="video-meta">
-                        <span><i class="far fa-eye"></i> ${video.views || 0}</span>
-                        <span><i class="far fa-clock"></i> ${video.timestamp ? new Date(video.timestamp).toLocaleDateString() : 'New'}</span>
-                    </div>
-                </div>
-            </div>
-        `;
-    });
-    
-    videoGrid.innerHTML = html;
+  if (!videos) {
+    videoGrid.innerHTML = '<p style="color:#aaa; text-align:center; padding:40px;">لا توجد فيديوهات حالياً</p>';
+    return;
+  }
+  
+  let html = '';
+  Object.entries(videos).forEach(([id, video]) => {
+    html += `
+      <div class="video-card" onclick="playVideo('${video.url}', '${video.title}')">
+        <div class="thumbnail" style="background-image: url('${video.thumbnail || ''}')">
+          <i class="fas fa-play-circle play-icon"></i>
+          ${video.premiumOnly ? '<span style="position:absolute; top:8px; right:8px;" class="premium-badge">PREMIUM</span>' : ''}
+          ${isAdmin ? `<button onclick="event.stopPropagation(); deleteVideo('${id}')" style="position:absolute; top:8px; left:8px; background:rgba(0,0,0,0.7); color:white; border:none; width:30px; height:30px; border-radius:50%; cursor:pointer;"><i class="fas fa-trash"></i></button>` : ''}
+        </div>
+        <div class="video-info">
+          <div class="video-title">${video.title}</div>
+          <div class="video-meta">
+            <span>👁 ${video.views || 0}</span>
+            <span>${video.timestamp ? new Date(video.timestamp).toLocaleDateString('ar-SA') : 'جديد'}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+  videoGrid.innerHTML = html;
 }
 
-// Video player
 function playVideo(url, title) {
-    document.getElementById('videoPlayer').src = url;
-    document.getElementById('videoModal').style.display = 'flex';
+  document.getElementById('videoPlayer').src = url;
+  document.getElementById('videoModal').style.display = 'flex';
 }
 
 function closeModal() {
-    document.getElementById('videoModal').style.display = 'none';
-    document.getElementById('videoPlayer').src = '';
+  document.getElementById('videoModal').style.display = 'none';
+  document.getElementById('videoPlayer').src = '';
 }
 
-function showUpgradePrompt() {
-    if (confirm('🔒 This is premium content. Would you like to upgrade your subscription?')) {
-        showSignupModal();
-    }
+function deleteVideo(videoId) {
+  if (!isAdmin) return;
+  if (confirm('حذف هذا الفيديو؟')) {
+    database.ref('videos/' + videoId).remove().then(() => loadVideos());
+  }
 }
 
-// Cloudinary Upload Widget
-let uploadWidget;
-
-function initCloudinaryWidget() {
-    uploadWidget = cloudinary.createUploadWidget({
-        cloudName: CLOUDINARY_CLOUD_NAME, // من firebase-config.js
-        uploadPreset: CLOUDINARY_UPLOAD_PRESET,
-        sources: ['local', 'url', 'camera'],
-        multiple: false,
-        folder: 'playboytv_content',
-        resourceType: 'auto',
-        clientAllowedFormats: ['mp4', 'mov', 'avi', 'webm', 'jpg', 'png'],
-        maxFileSize: 500000000, // 500MB
-        styles: {
-            palette: {
-                window: "#0A0A0E",
-                windowBorder: "#D4AF37",
-                tabIcon: "#D4AF37",
-                menuIcons: "#D4AF37",
-                textDark: "#FFFFFF",
-                textLight: "#CCCCCC",
-                link: "#D4AF37",
-                action: "#D4AF37",
-                inProgress: "#D4AF37",
-                complete: "#33CC33",
-                error: "#FF4444"
-            }
-        }
-    }, (error, result) => {
-        if (!error && result && result.event === "success") {
-            console.log('✅ Upload success:', result.info);
-            
-            // Save to Firebase
-            const videoData = {
-                title: result.info.original_filename || 'Untitled',
-                url: result.info.secure_url,
-                thumbnail: result.info.thumbnail_url || result.info.secure_url.replace('/upload/', '/upload/w_400,h_300,c_fill/'),
-                premiumOnly: true,
-                timestamp: Date.now(),
-                views: 0,
-                uploadedBy: currentUser?.email || 'unknown',
-                cloudinaryId: result.info.public_id
-            };
-            
-            // Ask for title
-            const customTitle = prompt('📝 Enter video title:', videoData.title);
-            if (customTitle) videoData.title = customTitle;
-            
-            // Ask if premium
-            videoData.premiumOnly = confirm('🔒 Make this premium content? (Only subscribers can watch)');
-            
-            // Save to Firebase
-            database.ref('videos').push(videoData).then(() => {
-                document.getElementById('uploadStatus').innerHTML = '✅ Uploaded successfully!';
-                document.getElementById('uploadStatus').style.color = '#33CC33';
-                loadVideos();
-                
-                // Clear file input
-                document.getElementById('videoFile').value = '';
-            });
-        }
-        
-        if (error) {
-            console.error('❌ Upload error:', error);
-            document.getElementById('uploadStatus').innerHTML = '❌ Upload failed: ' + error.message;
-            document.getElementById('uploadStatus').style.color = '#FF4444';
-        }
+function deleteAllVideos() {
+  if (!isAdmin) return;
+  if (confirm('حذف جميع الفيديوهات؟')) {
+    database.ref('videos').remove().then(() => {
+      loadVideos();
+      alert('تم حذف جميع الفيديوهات');
     });
+  }
+}
+
+// ========== CLOUDINARY UPLOAD ==========
+function initUploadWidget() {
+  uploadWidget = cloudinary.createUploadWidget({
+    cloudName: CLOUDINARY_CLOUD_NAME,
+    uploadPreset: CLOUDINARY_UPLOAD_PRESET,
+    sources: ['local', 'url', 'camera'],
+    multiple: false,
+    folder: 'playboytv_content',
+    resourceType: 'auto',
+    clientAllowedFormats: ['mp4', 'mov', 'avi', 'webm', 'jpg', 'png'],
+    maxFileSize: 500000000
+  }, (error, result) => {
+    if (!error && result && result.event === "success") {
+      const videoData = {
+        title: result.info.original_filename || 'بدون عنوان',
+        url: result.info.secure_url,
+        thumbnail: result.info.thumbnail_url || result.info.secure_url.replace('/upload/', '/upload/w_400,h_300,c_fill/'),
+        premiumOnly: true,
+        timestamp: Date.now(),
+        views: 0,
+        uploadedBy: currentUser?.email || 'unknown'
+      };
+      
+      database.ref('videos').push(videoData).then(() => {
+        document.getElementById('uploadStatus').textContent = '✅ تم الرفع بنجاح!';
+        loadVideos();
+      });
+    }
+    if (error) {
+      document.getElementById('uploadStatus').textContent = '❌ فشل الرفع';
+    }
+  });
 }
 
 function uploadToCloudinary() {
-    if (!currentUser) {
-        alert('⚠️ Please login to upload content');
-        showLoginModal();
-        return;
-    }
-    
-    if (!uploadWidget) {
-        initCloudinaryWidget();
-    }
-    
-    uploadWidget.open();
+  if (!currentUser) {
+    alert('يجب تسجيل الدخول للرفع');
+    showLoginModal();
+    return;
+  }
+  if (!uploadWidget) initUploadWidget();
+  uploadWidget.open();
 }
 
-// File input handler
-document.getElementById('videoFile').addEventListener('change', function(e) {
-    if (this.files[0]) {
-        const file = this.files[0];
-        const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
-        document.getElementById('uploadStatus').innerHTML = `📁 Selected: ${file.name} (${sizeInMB} MB)`;
-        document.getElementById('uploadStatus').style.color = '#D4AF37';
-    }
-});
-
-// Auth functions
-function showLoginModal() {
-    document.getElementById('loginModal').style.display = 'flex';
-}
-
-function closeLoginModal() {
-    document.getElementById('loginModal').style.display = 'none';
-}
-
-function showSignupModal() {
-    document.getElementById('signupModal').style.display = 'flex';
-}
-
-function closeSignupModal() {
-    document.getElementById('signupModal').style.display = 'none';
-}
+// ========== AUTH MODALS ==========
+function showLoginModal() { document.getElementById('loginModal').style.display = 'flex'; }
+function closeLoginModal() { document.getElementById('loginModal').style.display = 'none'; }
+function showSignupModal() { document.getElementById('signupModal').style.display = 'flex'; }
+function closeSignupModal() { document.getElementById('signupModal').style.display = 'none'; }
 
 function login() {
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
-    
-    if (!email || !password) {
-        alert('Please enter email and password');
-        return;
-    }
-    
-    auth.signInWithEmailAndPassword(email, password)
-        .then(() => {
-            closeLoginModal();
-            document.getElementById('loginEmail').value = '';
-            document.getElementById('loginPassword').value = '';
-        })
-        .catch(error => {
-            alert('❌ Login failed: ' + error.message);
-        });
+  const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginPassword').value;
+  if (!email || !password) { alert('أدخل البريد وكلمة المرور'); return; }
+  
+  auth.signInWithEmailAndPassword(email, password)
+    .then(() => {
+      closeLoginModal();
+      document.getElementById('loginEmail').value = '';
+      document.getElementById('loginPassword').value = '';
+    })
+    .catch(error => {
+      if (error.code === 'auth/user-not-found') {
+        if (confirm('الحساب غير موجود. إنشاء حساب جديد؟')) {
+          signup();
+        }
+      } else {
+        alert('خطأ: ' + error.message);
+      }
+    });
 }
 
 function signup() {
-    const email = document.getElementById('signupEmail').value;
-    const password = document.getElementById('signupPassword').value;
-    const plan = document.getElementById('planSelect').value;
-    
-    if (!email || !password) {
-        alert('Please enter email and password');
-        return;
-    }
-    
-    if (password.length < 6) {
-        alert('Password must be at least 6 characters');
-        return;
-    }
-    
-    auth.createUserWithEmailAndPassword(email, password)
-        .then(userCredential => {
-            // Save subscription
-            return database.ref('subscriptions/' + userCredential.user.uid).set({
-                plan: plan,
-                email: email,
-                createdAt: Date.now(),
-                status: 'active'
-            });
-        })
-        .then(() => {
-            closeSignupModal();
-            alert('✅ Account created successfully! Welcome to PlayboyTV');
-            
-            // Clear form
-            document.getElementById('signupEmail').value = '';
-            document.getElementById('signupPassword').value = '';
-            
-            // Make first user admin if it's jasim28v@gmail.com
-            if (email === ADMIN_EMAIL) {
-                database.ref('admins/' + auth.currentUser.uid).set({
-                    email: email,
-                    role: 'super_admin',
-                    createdAt: Date.now()
-                });
-            }
-        })
-        .catch(error => {
-            alert('❌ Signup failed: ' + error.message);
-        });
+  const email = document.getElementById('signupEmail').value;
+  const password = document.getElementById('signupPassword').value;
+  const plan = document.getElementById('planSelect').value;
+  
+  if (!email || !password) { alert('أدخل البريد وكلمة المرور'); return; }
+  if (password.length < 6) { alert('كلمة المرور 6 أحرف على الأقل'); return; }
+  
+  auth.createUserWithEmailAndPassword(email, password)
+    .then(userCredential => {
+      return database.ref('subscriptions/' + userCredential.user.uid).set({
+        plan, email, createdAt: Date.now()
+      });
+    })
+    .then(() => {
+      closeSignupModal();
+      document.getElementById('signupEmail').value = '';
+      document.getElementById('signupPassword').value = '';
+      alert('✅ تم إنشاء الحساب بنجاح!');
+    })
+    .catch(error => alert('خطأ: ' + error.message));
 }
 
 function logout() {
-    auth.signOut().then(() => {
-        ageGate.style.display = 'flex';
-        mainContent.style.display = 'none';
-        localStorage.removeItem('age_verified');
-    });
+  auth.signOut().then(() => {
+    localStorage.removeItem('age_verified');
+    location.reload();
+  });
 }
 
-// Initialize sample videos for testing (only if database is empty)
-function initializeSampleContent() {
-    database.ref('videos').once('value').then(snapshot => {
-        if (!snapshot.exists()) {
-            const sampleVideos = {
-                sample1: {
-                    title: "🎬 Welcome to PlayboyTV",
-                    url: "https://res.cloudinary.com/do33_x/video/upload/v1/playboytv_content/welcome",
-                    thumbnail: "https://res.cloudinary.com/do33_x/image/upload/w_400,h_300,c_fill/v1/playboytv_content/welcome",
-                    premiumOnly: false,
-                    timestamp: Date.now(),
-                    views: 0,
-                    uploadedBy: ADMIN_EMAIL
-                }
-            };
-            
-            database.ref('videos').set(sampleVideos).then(() => {
-                console.log('📹 Sample content added');
-                loadVideos();
-            });
+// Initialize sample videos
+setTimeout(() => {
+  database.ref('videos').once('value').then(snapshot => {
+    if (!snapshot.exists()) {
+      database.ref('videos').set({
+        sample1: {
+          title: "🎬 Night Calls Exclusive",
+          url: "https://res.cloudinary.com/do33_x/video/upload/sample.mp4",
+          thumbnail: "https://res.cloudinary.com/do33_x/image/upload/w_400,h_300,c_fill/sample.jpg",
+          premiumOnly: true,
+          timestamp: Date.now(),
+          views: 1250
         }
-    });
-}
+      }).then(() => loadVideos());
+    }
+  });
+}, 1000);
 
-// Run initialization
-setTimeout(initializeSampleContent, 2000);
-
-console.log('🎬 PlayboyTV System Ready');
-console.log('☁️ Cloudinary Cloud:', CLOUDINARY_CLOUD_NAME);
-console.log('📁 Collection:', CLOUDINARY_COLLECTION);
+console.log('✅ PlayboyTV Ready - Age Gate Fixed!');
