@@ -2,9 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
   <title>PlayboyTV • Exclusive Content</title>
-  <!-- Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
@@ -17,132 +16,155 @@
       color: #fff;
       min-height: 100vh;
     }
-    /* Premium dark theme */
     .app { display: flex; flex-direction: column; min-height: 100vh; }
     
     /* Header */
     .main-header {
       background: #000;
       border-bottom: 1px solid #2a2a2a;
-      padding: 16px 32px;
+      padding: 12px 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       flex-wrap: wrap;
-      gap: 20px;
+      gap: 12px;
     }
-    .logo { display: flex; align-items: center; gap: 12px; }
-    .rabbit-icon { font-size: 32px; color: #d4af37; }
-    .logo-text { font-size: 28px; font-weight: 700; letter-spacing: 3px; }
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .rabbit-icon { font-size: 28px; color: #d4af37; }
+    .logo-text { font-size: 22px; font-weight: 700; letter-spacing: 2px; }
     .logo-text span { color: #d4af37; font-weight: 300; }
     
-    .user-section { display: flex; align-items: center; gap: 20px; }
-    #authContainer { display: flex; gap: 12px; }
+    .user-section { display: flex; align-items: center; gap: 12px; }
+    #authContainer { display: flex; gap: 8px; }
     .btn {
-      padding: 10px 24px;
+      padding: 8px 16px;
       border-radius: 40px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;
       border: none;
-      font-size: 14px;
+      font-size: 13px;
     }
     .btn-gold {
       background: #d4af37;
       color: #000;
       font-weight: 700;
     }
-    .btn-gold:hover { background: #e5c158; transform: scale(1.02); }
     .btn-outline {
       background: transparent;
       border: 1px solid #d4af37;
       color: #d4af37;
     }
-    .btn-outline:hover { background: #d4af37; color: #000; }
-    #userDisplay { display: none; align-items: center; gap: 15px; }
-    .user-avatar { width: 40px; height: 40px; border-radius: 50%; background: #d4af37; display: flex; align-items: center; justify-content: center; color: #000; font-weight: bold; }
-    .user-info { display: flex; flex-direction: column; }
-    .user-email { font-size: 14px; color: #ccc; }
-    .subscription-badge { font-size: 11px; background: #d4af37; color: #000; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+    #userDisplay { display: none; align-items: center; gap: 10px; }
+    .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: #d4af37; display: flex; align-items: center; justify-content: center; color: #000; font-weight: bold; font-size: 14px; }
+    .user-email { font-size: 12px; color: #ccc; }
+    .subscription-badge { font-size: 10px; background: #d4af37; color: #000; padding: 2px 6px; border-radius: 20px; font-weight: 600; }
     
     /* Age Gate Overlay */
     .age-gate-overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.95); backdrop-filter: blur(10px);
+      background: rgba(0,0,0,0.98); backdrop-filter: blur(10px);
       z-index: 9999; display: flex; align-items: center; justify-content: center;
-      padding: 20px;
+      padding: 16px;
     }
     .age-card {
-      max-width: 600px; background: #11131f; border: 1px solid #333;
-      border-radius: 24px; padding: 40px; text-align: center;
+      max-width: 550px; width: 100%; background: #11131f; border: 1px solid #333;
+      border-radius: 20px; padding: 28px 20px; text-align: center;
     }
-    .age-card h2 { font-size: 32px; margin-bottom: 20px; color: #d4af37; }
-    .age-warning { background: #1a0000; border-left: 4px solid #d4af37; padding: 20px; margin: 20px 0; text-align: left; }
-    .terms-scroll { max-height: 200px; overflow-y: auto; text-align: left; padding: 15px; background: #0a0a0e; border-radius: 12px; margin: 20px 0; font-size: 13px; }
-    .checkbox-age { display: flex; gap: 12px; align-items: center; margin: 20px 0; }
-    .checkbox-age input { width: 22px; height: 22px; accent-color: #d4af37; }
-    #enterSiteBtn { width: 100%; padding: 18px; font-size: 20px; font-weight: 800; }
-    #enterSiteBtn:disabled { opacity: 0.4; cursor: not-allowed; background: #555; }
+    .age-card h2 { font-size: 24px; margin-bottom: 16px; color: #d4af37; }
+    .age-warning { background: #1a0000; border-left: 4px solid #d4af37; padding: 14px; margin: 16px 0; text-align: right; font-size: 13px; }
+    .terms-scroll { max-height: 180px; overflow-y: auto; text-align: right; padding: 12px; background: #0a0a0e; border-radius: 12px; margin: 16px 0; font-size: 12px; }
+    .checkbox-age { display: flex; gap: 10px; align-items: center; margin: 16px 0; justify-content: flex-end; }
+    .checkbox-age input { width: 20px; height: 20px; accent-color: #d4af37; }
+    .checkbox-age label { font-size: 14px; cursor: pointer; }
+    #enterSiteBtn { width: 100%; padding: 16px; font-size: 18px; font-weight: 800; background: #d4af37; color: #000; border: none; border-radius: 40px; cursor: pointer; }
+    #enterSiteBtn:disabled { opacity: 0.4; cursor: not-allowed; background: #555; color: #ccc; }
     
     /* Main Content Area */
-    .content-area { padding: 30px; flex: 1; display: none; }
-    .section-title { font-size: 28px; margin-bottom: 24px; border-left: 6px solid #d4af37; padding-left: 20px; }
+    .content-area { padding: 20px 16px; flex: 1; display: none; }
+    .section-title { font-size: 22px; margin-bottom: 20px; border-right: 5px solid #d4af37; padding-right: 16px; }
     
     /* Video Grid */
-    .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; }
+    .video-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
     .video-card {
       background: #151a24; border-radius: 16px; overflow: hidden;
-      border: 1px solid #2a2a3c; transition: transform 0.2s; cursor: pointer;
+      border: 1px solid #2a2a3c; cursor: pointer;
     }
-    .video-card:hover { transform: translateY(-5px); border-color: #d4af37; }
     .thumbnail {
-      height: 200px; background-size: cover; background-position: center;
+      height: 180px; background-size: cover; background-position: center;
       position: relative; display: flex; align-items: center; justify-content: center;
       background-color: #1a1a2e;
     }
-    .play-icon { font-size: 50px; color: #d4af37; opacity: 0.8; }
-    .video-info { padding: 16px; }
-    .video-title { font-weight: 700; margin-bottom: 8px; }
-    .video-meta { display: flex; justify-content: space-between; color: #aaa; font-size: 13px; }
-    .premium-badge { background: #d4af37; color: #000; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+    .play-icon { font-size: 45px; color: #d4af37; opacity: 0.8; }
+    .video-info { padding: 14px; }
+    .video-title { font-weight: 700; margin-bottom: 6px; font-size: 15px; }
+    .video-meta { display: flex; justify-content: space-between; color: #aaa; font-size: 12px; }
+    .premium-badge { background: #d4af37; color: #000; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
     
-    /* Modal for Video Player */
-    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 10000; align-items: center; justify-content: center; }
-    .modal-content { max-width: 900px; width: 90%; background: #000; border-radius: 16px; overflow: hidden; }
+    /* Modal Video */
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 10000; align-items: center; justify-content: center; }
+    .modal-content { max-width: 100%; width: 100%; background: #000; }
     .video-container { position: relative; padding-bottom: 56.25%; height: 0; }
     .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-    .close-modal { position: absolute; top: 20px; right: 30px; font-size: 40px; color: #fff; cursor: pointer; }
+    .close-modal { position: absolute; top: 12px; right: 16px; font-size: 32px; color: #fff; cursor: pointer; z-index: 10001; }
     
-    /* Auth Modals */
+    /* Auth Modal */
     .auth-modal {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
-      z-index: 10001; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.9); backdrop-filter: blur(8px);
+      z-index: 10001; align-items: flex-end; justify-content: center;
     }
     .auth-box {
-      background: #11131f; border: 1px solid #333; border-radius: 24px;
-      padding: 40px; max-width: 420px; width: 90%;
+      background: #11131f; border: 1px solid #333; border-radius: 24px 24px 0 0;
+      padding: 28px 20px; max-width: 100%; width: 100%;
     }
-    .auth-box h3 { font-size: 28px; margin-bottom: 24px; color: #d4af37; }
-    .form-group { margin-bottom: 20px; }
-    .form-group input {
-      width: 100%; padding: 14px 18px; background: #0a0a0e; border: 1px solid #333;
+    .auth-box h3 { font-size: 22px; margin-bottom: 20px; color: #d4af37; }
+    .form-group { margin-bottom: 16px; }
+    .form-group input, .form-group select {
+      width: 100%; padding: 14px 16px; background: #0a0a0e; border: 1px solid #333;
       border-radius: 40px; color: #fff; font-size: 16px;
     }
-    .form-group input:focus { outline: none; border-color: #d4af37; }
-    .close-auth { float: right; font-size: 28px; cursor: pointer; color: #aaa; }
+    .close-auth { float: left; font-size: 24px; cursor: pointer; color: #aaa; }
     
     /* Upload Section */
-    .upload-section { margin: 30px 0; padding: 20px; background: #11131f; border-radius: 16px; border: 1px dashed #d4af37; }
-    .upload-area { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+    .upload-section { margin: 20px 0; padding: 16px; background: #11131f; border-radius: 16px; border: 1px dashed #d4af37; }
+    .upload-area { display: flex; flex-direction: column; gap: 12px; }
     #videoFile { display: none; }
-    .upload-btn { padding: 12px 24px; background: #d4af37; color: #000; border-radius: 40px; cursor: pointer; font-weight: 600; }
-    #uploadStatus { margin-left: 20px; color: #d4af37; }
+    .upload-btn { padding: 12px 20px; background: #d4af37; color: #000; border-radius: 40px; cursor: pointer; font-weight: 600; text-align: center; }
+    #uploadStatus { color: #d4af37; font-size: 13px; text-align: center; }
+    
+    /* Admin Panel */
+    .admin-panel-btn {
+      position: fixed; bottom: 80px; right: 16px; background: #211922; color: white;
+      padding: 10px 16px; border-radius: 40px; font-weight: 600; cursor: pointer;
+      z-index: 98; box-shadow: 0 4px 12px rgba(0,0,0,0.2); display: none;
+      border: none; font-size: 13px;
+    }
+    
+    /* Upload Button */
+    .upload-btn-fixed {
+      position: fixed; bottom: 20px; right: 16px; background: #d4af37; color: #000;
+      width: 50px; height: 50px; border-radius: 50%; display: none; align-items: center;
+      justify-content: center; font-size: 22px; box-shadow: 0 4px 12px rgba(212,175,55,0.3);
+      cursor: pointer; z-index: 99; border: none;
+    }
     
     /* Footer */
-    .footer { background: #000; padding: 20px; text-align: center; color: #666; font-size: 13px; border-top: 1px solid #222; }
+    .footer { background: #000; padding: 16px; text-align: center; color: #666; font-size: 11px; border-top: 1px solid #222; }
     
     .hidden { display: none !important; }
+    .logged-in .upload-btn-fixed { display: flex; }
+    .is-admin .admin-panel-btn { display: block; }
+    
+    /* Tablet and up */
+    @media (min-width: 600px) {
+      .video-grid { grid-template-columns: repeat(2, 1fr); }
+      .auth-box { max-width: 450px; border-radius: 24px; margin: 20px; }
+      .auth-modal { align-items: center; }
+    }
+    @media (min-width: 900px) {
+      .video-grid { grid-template-columns: repeat(3, 1fr); }
+    }
   </style>
 </head>
 <body>
@@ -155,8 +177,8 @@
     </div>
     <div class="user-section">
       <div id="authContainer">
-        <button class="btn btn-outline" onclick="showLoginModal()">Login</button>
-        <button class="btn btn-gold" onclick="showSignupModal()">Subscribe</button>
+        <button class="btn btn-outline" onclick="showLoginModal()">دخول</button>
+        <button class="btn btn-gold" onclick="showSignupModal()">اشتراك</button>
       </div>
       <div id="userDisplay">
         <div class="user-avatar" id="userInitial">J</div>
@@ -164,7 +186,7 @@
           <span class="user-email" id="userEmailDisplay"></span>
           <span class="subscription-badge" id="subBadge">Free</span>
         </div>
-        <button class="btn btn-outline" onclick="logout()">Logout</button>
+        <button class="btn btn-outline" onclick="logout()">خروج</button>
       </div>
     </div>
   </header>
@@ -172,56 +194,63 @@
   <!-- Age Verification Gate -->
   <div id="ageGate" class="age-gate-overlay">
     <div class="age-card">
-      <i class="fas fa-crown" style="font-size: 50px; color: #d4af37;"></i>
-      <h2>RESTRICTED ACCESS</h2>
+      <i class="fas fa-crown" style="font-size: 40px; color: #d4af37;"></i>
+      <h2>دخول مقيد</h2>
       <div class="age-warning">
-        <i class="fas fa-exclamation-triangle"></i> ADULTS ONLY (18+)
+        <i class="fas fa-exclamation-triangle"></i> للبالغين فقط (18+)
       </div>
       <div class="terms-scroll">
-        <p><strong>TERMS AND CONDITIONS:</strong></p>
-        <p>✓ You are at least 18 years of age</p>
-        <p>✓ You agree to the full terms and privacy policy</p>
-        <p>✓ Sexually explicit material is not offensive to you</p>
-        <p>✓ You will not expose minors to this content</p>
-        <p>✓ Content is for personal use only</p>
+        <p><strong>الشروط والأحكام:</strong></p>
+        <p>✓ عمرك 18 سنة على الأقل</p>
+        <p>✓ توافق على الشروط وسياسة الخصوصية</p>
+        <p>✓ المحتوى الجنسي الصريح لا يسيء إليك</p>
+        <p>✓ لن تعرض القاصرين لهذا المحتوى</p>
+        <p>✓ المحتوى للاستخدام الشخصي فقط</p>
         <p>© 2026 Playboy Enterprises International, Inc.</p>
       </div>
       <div class="checkbox-age">
         <input type="checkbox" id="ageConfirm">
-        <label for="ageConfirm"><strong>I am 18+ and agree to all terms</strong></label>
+        <label for="ageConfirm"><strong>أوافق على جميع الشروط وأؤكد أن عمري 18+</strong></label>
       </div>
-      <button class="btn btn-gold" id="enterSiteBtn" disabled>ENTER SITE</button>
-      <p style="margin-top: 20px; font-size: 12px; color: #888;">
-        By entering, you agree to our use of cookies.
+      <button id="enterSiteBtn" disabled>دخول الموقع</button>
+      <p style="margin-top: 16px; font-size: 11px; color: #888;">
+        بالدخول، أنت توافق على استخدام ملفات تعريف الارتباط
       </p>
     </div>
   </div>
 
-  <!-- Main Content (hidden until age verified) -->
+  <!-- Main Content -->
   <div id="mainContent" class="content-area">
-    <!-- Upload Section (visible for admin/specific user) -->
     <div id="uploadSection" class="upload-section hidden">
-      <h3><i class="fas fa-cloud-upload-alt"></i> Upload Content (Cloudinary)</h3>
+      <h3 style="margin-bottom: 12px;"><i class="fas fa-cloud-upload-alt"></i> رفع محتوى (Cloudinary)</h3>
       <div class="upload-area">
         <input type="file" id="videoFile" accept="video/*,image/*">
         <button class="upload-btn" onclick="document.getElementById('videoFile').click()">
-          <i class="fas fa-plus"></i> Select File
+          <i class="fas fa-plus"></i> اختر ملف
         </button>
-        <button class="btn btn-gold" onclick="uploadToCloudinary()">Upload to Cloud</button>
+        <button class="btn btn-gold" onclick="uploadToCloudinary()">رفع إلى السحابة</button>
         <span id="uploadStatus"></span>
       </div>
-      <p style="margin-top: 10px; color: #aaa;">Cloud: do33_x • Collection: da457cqma</p>
+      <p style="margin-top: 10px; color: #aaa; font-size: 12px;">Cloud: do33_x</p>
     </div>
 
-    <h2 class="section-title"><i class="fas fa-fire" style="color: #d4af37;"></i> Top Shows & Exclusives</h2>
-    <div id="videoGrid" class="video-grid">
-      <!-- Videos loaded from Firebase -->
-    </div>
+    <h2 class="section-title"><i class="fas fa-fire" style="color: #d4af37;"></i> أفضل العروض والحصريات</h2>
+    <div id="videoGrid" class="video-grid"></div>
   </div>
+
+  <!-- Admin Panel Button -->
+  <button class="admin-panel-btn" id="adminPanelBtn" onclick="deleteAllVideos()">
+    <i class="fas fa-trash"></i> حذف الكل (أدمن)
+  </button>
+
+  <!-- Upload Button -->
+  <button class="upload-btn-fixed" id="uploadBtn" onclick="uploadToCloudinary()">
+    <i class="fas fa-plus"></i>
+  </button>
 
   <!-- Video Player Modal -->
   <div id="videoModal" class="modal" onclick="closeModal()">
-    <span class="close-modal">&times;</span>
+    <span class="close-modal" onclick="closeModal()">&times;</span>
     <div class="modal-content" onclick="event.stopPropagation()">
       <div class="video-container">
         <iframe id="videoPlayer" frameborder="0" allowfullscreen allow="autoplay"></iframe>
@@ -233,15 +262,15 @@
   <div id="loginModal" class="auth-modal" onclick="if(event.target === this) closeLoginModal()">
     <div class="auth-box">
       <span class="close-auth" onclick="closeLoginModal()">&times;</span>
-      <h3>Login</h3>
+      <h3>تسجيل الدخول</h3>
       <div class="form-group">
-        <input type="email" id="loginEmail" placeholder="Email">
+        <input type="email" id="loginEmail" placeholder="البريد الإلكتروني" dir="ltr">
       </div>
       <div class="form-group">
-        <input type="password" id="loginPassword" placeholder="Password">
+        <input type="password" id="loginPassword" placeholder="كلمة المرور">
       </div>
-      <button class="btn btn-gold" style="width:100%;" onclick="login()">Sign In</button>
-      <p style="margin-top: 20px; text-align: center;">Don't have account? <a href="#" onclick="showSignupModal(); closeLoginModal();" style="color:#d4af37;">Subscribe</a></p>
+      <button class="btn btn-gold" style="width:100%;" onclick="login()">دخول</button>
+      <p style="margin-top: 16px; text-align: center;">ليس لديك حساب؟ <a href="#" onclick="showSignupModal(); closeLoginModal();" style="color:#d4af37;">اشترك الآن</a></p>
     </div>
   </div>
 
@@ -249,27 +278,27 @@
   <div id="signupModal" class="auth-modal" onclick="if(event.target === this) closeSignupModal()">
     <div class="auth-box">
       <span class="close-auth" onclick="closeSignupModal()">&times;</span>
-      <h3>Subscribe</h3>
+      <h3>إنشاء حساب</h3>
       <div class="form-group">
-        <input type="email" id="signupEmail" placeholder="Email">
+        <input type="email" id="signupEmail" placeholder="البريد الإلكتروني" dir="ltr">
       </div>
       <div class="form-group">
-        <input type="password" id="signupPassword" placeholder="Password">
+        <input type="password" id="signupPassword" placeholder="كلمة المرور">
       </div>
       <div class="form-group">
-        <select id="planSelect" style="width:100%; padding:14px; background:#0a0a0e; border:1px solid #333; border-radius:40px; color:#fff;">
-          <option value="free">Free - Limited Access</option>
-          <option value="premium">Premium Monthly - $9.99</option>
-          <option value="yearly">Yearly - $99.99</option>
+        <select id="planSelect">
+          <option value="free">مجاني - وصول محدود</option>
+          <option value="premium">بريميوم شهري - $9.99</option>
+          <option value="yearly">سنوي - $99.99</option>
         </select>
       </div>
-      <button class="btn btn-gold" style="width:100%;" onclick="signup()">Create Account</button>
+      <button class="btn btn-gold" style="width:100%;" onclick="signup()">إنشاء حساب</button>
     </div>
   </div>
 
   <footer class="footer">
-    <p>© 2026 Playboy Enterprises International, Inc. | Admin: jasim28v@gmail.com | Cloudinary: do33_x</p>
-    <p>Terms • Privacy • Billing: SEGPAY.com | 25000 Avenue Stanford, Santa Clarita, CA</p>
+    <p>© 2026 Playboy Enterprises International, Inc. | Admin: jasim28v@gmail.com</p>
+    <p>الشروط • الخصوصية • الفوترة: SEGPAY.com</p>
   </footer>
 </div>
 
@@ -277,7 +306,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
 <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
 <script src="firebase-config.js"></script>
 <script src="script.js"></script>
