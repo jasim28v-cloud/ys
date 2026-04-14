@@ -1,408 +1,346 @@
-// script.js - Pinterest Clone with Admin System
+// script.js - Complete system with auth, subscriptions, and Cloudinary upload
 
 // Global state
 let currentUser = null;
-let isAdmin = false;
-let currentTab = 'created';
-let allBoards = [];
-let allPins = [];
-let currentPinId = null;
+let userSubscription = 'free';
 const ADMIN_EMAIL = 'jasim28v@gmail.com';
 
-// DOM Elements
-const boardsGrid = document.getElementById('boardsGrid');
-const pinsGrid = document.getElementById('pinsGrid');
-const boardsContainer = document.getElementById('boardsContainer');
-const pinsContainer = document.getElementById('pinsContainer');
-const uploadBtn = document.getElementById('uploadBtn');
-const adminPanelBtn = document.getElementById('adminPanelBtn');
-const adminPanel = document.getElementById('adminPanel');
-const modalDeleteBtn = document.getElementById('modalDeleteBtn');
+// Cloudinary configuration - Using from firebase-config.js
+const CLOUDINARY_UPLOAD_PRESET = 'playboytv_upload'; // أنشئيه في لوحة تحكم Cloudinary
 
-// Initialize sample data
-const sampleBoards = [
-  { name: "خلفيات الجوال، صور الهاتف... Mobile Wallpapers", pinCount: 129, cover: "📱" },
-  { name: "صور سوشيال ميديا", pinCount: 9759, cover: "📸" },
-  { name: "صور صباح الخير", pinCount: 168, cover: "🌅" },
-  { name: "صور اظافر - اكريليك اظافر ديزاين مناكير", pinCount: 25, cover: "💅" },
-  { name: "فاشون بناتى حريمى شيك", pinCount: 346, cover: "👗" },
-  { name: "صور اسلامية", pinCount: 455, cover: "🕌" },
-  { name: "رسومات لتعليم الاطفال التلوين", pinCount: 186, cover: "🎨" },
-  { name: "ديكورات وأثاث", pinCount: 2145, cover: "🛋️" },
-  { name: "صور رمضان كريم، شهر رمضان المبارك", pinCount: 571, cover: "🌙" },
-  { name: "صور اطفال", pinCount: 488, cover: "👶" },
-  { name: "صور ورود ، اجمل صور زهور ورد رائعة", pinCount: 309, cover: "🌸" },
-  { name: "ازياء وموضة- رجالي", pinCount: 24, cover: "👔" }
-];
+// DOM Elements
+const ageGate = document.getElementById('ageGate');
+const mainContent = document.getElementById('mainContent');
+const enterBtn = document.getElementById('enterSiteBtn');
+const ageCheck = document.getElementById('ageConfirm');
+const authContainer = document.getElementById('authContainer');
+const userDisplay = document.getElementById('userDisplay');
+const userEmailDisplay = document.getElementById('userEmailDisplay');
+const userInitial = document.getElementById('userInitial');
+const subBadge = document.getElementById('subBadge');
+const videoGrid = document.getElementById('videoGrid');
+const uploadSection = document.getElementById('uploadSection');
+
+// Age verification
+ageCheck.addEventListener('change', () => {
+    enterBtn.disabled = !ageCheck.checked;
+});
+
+enterBtn.addEventListener('click', () => {
+    if (ageCheck.checked) {
+        ageGate.style.display = 'none';
+        mainContent.style.display = 'block';
+        localStorage.setItem('age_verified', 'true');
+        loadVideos();
+    }
+});
+
+// Check if already verified
+if (localStorage.getItem('age_verified') === 'true') {
+    ageGate.style.display = 'none';
+    mainContent.style.display = 'block';
+    loadVideos();
+}
 
 // Auth state observer
 auth.onAuthStateChanged(user => {
-  if (user) {
-    currentUser = user;
-    document.getElementById('headerAvatar').textContent = user.email.charAt(0).toUpperCase();
-    document.body.classList.remove('logged-out');
-    document.body.classList.add('logged-in');
-    
-    // Check if admin
-    isAdmin = user.email === ADMIN_EMAIL;
-    if (isAdmin) {
-      document.body.classList.add('is-admin');
-      console.log('✅ Admin logged in:', user.email);
+    if (user) {
+        currentUser = user;
+        authContainer.style.display = 'none';
+        userDisplay.style.display = 'flex';
+        userEmailDisplay.textContent = user.email;
+        userInitial.textContent = user.email.charAt(0).toUpperCase();
+        
+        // Check subscription
+        database.ref('subscriptions/' + user.uid).once('value').then(snapshot => {
+            userSubscription = snapshot.val()?.plan || 'free';
+            subBadge.textContent = userSubscription === 'premium' ? 'Premium' : 
+                                  userSubscription === 'yearly' ? 'Yearly VIP' : 'Free';
+            subBadge.style.background = userSubscription !== 'free' ? '#d4af37' : '#666';
+            
+            // Show upload section for admin
+            if (user.email === ADMIN_EMAIL) {
+                uploadSection.classList.remove('hidden');
+            }
+        });
+        
+        loadVideos();
+    } else {
+        currentUser = null;
+        authContainer.style.display = 'flex';
+        userDisplay.style.display = 'none';
+        uploadSection.classList.add('hidden');
     }
-    
-    // Update follow button
-    document.getElementById('followBtn').textContent = 'متابَع';
-  } else {
-    currentUser = null;
-    isAdmin = false;
-    document.getElementById('headerAvatar').textContent = 'ز';
-    document.body.classList.add('logged-out');
-    document.body.classList.remove('logged-in', 'is-admin');
-    document.getElementById('followBtn').textContent = 'متابعة';
-    adminPanel.classList.remove('admin-panel');
-    adminPanel.style.display = 'none';
-  }
 });
 
-// Handle user click
-function handleUserClick() {
-  if (currentUser) {
-    // Show user menu or logout
-    if (confirm('هل تريد تسجيل الخروج؟')) {
-      auth.signOut();
-    }
-  } else {
-    showAuthModal();
-  }
+// Load videos from Firebase
+function loadVideos() {
+    database.ref('videos').once('value').then(snapshot => {
+        const videos = snapshot.val();
+        renderVideos(videos);
+    });
 }
 
-// Load boards (public access - no login required)
-function loadBoards() {
-  database.ref('boards').once('value').then(snapshot => {
-    let boards = snapshot.val();
-    if (!boards) {
-      boards = sampleBoards;
-      database.ref('boards').set(boards);
+function renderVideos(videos) {
+    if (!videos) {
+        videoGrid.innerHTML = '<p style="color:#aaa; grid-column: 1/-1; text-align: center; padding: 50px;">📹 No videos yet. Admin can upload content.</p>';
+        return;
     }
     
-    allBoards = Array.isArray(boards) ? boards : Object.values(boards);
-    renderBoards();
-  });
-}
-
-function renderBoards() {
-  let html = '';
-  allBoards.forEach((board, index) => {
-    html += `
-      <div class="board-card" onclick="viewBoard(${index})">
-        <div class="board-cover" style="background: linear-gradient(135deg, #e60023, #c4001d); display: flex; align-items: center; justify-content: center; font-size: 48px;">
-          ${board.cover || '📌'}
-        </div>
-        ${isAdmin ? `<button class="delete-board-btn" onclick="event.stopPropagation(); deleteBoard(${index})"><i class="fas fa-trash"></i></button>` : ''}
-        <div class="board-title">${board.name}</div>
-        <div class="board-pin-count">${board.pinCount} من الصور</div>
-      </div>
-    `;
-  });
-  boardsGrid.innerHTML = html;
-}
-
-function deleteBoard(index) {
-  if (!isAdmin) {
-    alert('فقط الأدمن يمكنه حذف اللوحات');
-    return;
-  }
-  
-  if (confirm('هل أنت متأكد من حذف هذه اللوحة؟')) {
-    allBoards.splice(index, 1);
-    database.ref('boards').set(allBoards);
-    renderBoards();
-  }
-}
-
-function viewBoard(index) {
-  const board = allBoards[index];
-  currentTab = 'pins';
-  boardsContainer.classList.add('hidden');
-  pinsContainer.classList.remove('hidden');
-  
-  document.querySelectorAll('.tab')[0].classList.remove('active');
-  document.querySelectorAll('.tab')[1].classList.add('active');
-  
-  loadPins(board.name);
-}
-
-function loadPins(boardName) {
-  database.ref('pins').once('value').then(snapshot => {
-    let pins = snapshot.val();
-    if (!pins) {
-      // Sample pins
-      pins = {
-        pin1: { title: "إطلالة أنيقة", image: "https://picsum.photos/400/500?random=1", creator: "Zeina_Sowary", board: boardName },
-        pin2: { title: "فستان سهرة", image: "https://picsum.photos/400/600?random=2", creator: "Zeina_Sowary", board: boardName },
-        pin3: { title: "موضة ربيع 2024", image: "https://picsum.photos/400/400?random=3", creator: "Zeina_Sowary", board: boardName },
-        pin4: { title: "أكسسوارات راقية", image: "https://picsum.photos/400/700?random=4", creator: "Zeina_Sowary", board: boardName },
-        pin5: { title: "تصميم أظافر", image: "https://picsum.photos/400/450?random=5", creator: "Zeina_Sowary", board: boardName },
-        pin6: { title: "ديكور منزلي", image: "https://picsum.photos/400/550?random=6", creator: "Zeina_Sowary", board: boardName }
-      };
-      database.ref('pins').set(pins);
-    }
+    let html = '';
+    Object.entries(videos).forEach(([id, video]) => {
+        const canWatch = video.premiumOnly ? (userSubscription !== 'free' || currentUser?.email === ADMIN_EMAIL) : true;
+        
+        html += `
+            <div class="video-card" onclick="${canWatch ? `playVideo('${video.url}', '${video.title}')` : 'showUpgradePrompt()'}">
+                <div class="thumbnail" style="background-image: url('${video.thumbnail || 'https://via.placeholder.com/400x300/1a1a2e/d4af37?text=PlayboyTV'}')">
+                    <i class="fas fa-play-circle play-icon"></i>
+                    ${video.premiumOnly ? '<span style="position:absolute; top:10px; right:10px;" class="premium-badge">⭐ PREMIUM</span>' : ''}
+                </div>
+                <div class="video-info">
+                    <div class="video-title">${video.title}</div>
+                    <div class="video-meta">
+                        <span><i class="far fa-eye"></i> ${video.views || 0}</span>
+                        <span><i class="far fa-clock"></i> ${video.timestamp ? new Date(video.timestamp).toLocaleDateString() : 'New'}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
     
-    allPins = Object.entries(pins).map(([id, pin]) => ({ id, ...pin }));
-    renderPins();
-  });
+    videoGrid.innerHTML = html;
 }
 
-function renderPins() {
-  let html = '';
-  allPins.forEach(pin => {
-    html += `
-      <div class="pin-card" onclick="openPin('${pin.id}', '${pin.image}', '${pin.title}')">
-        <img class="pin-image" src="${pin.image}" alt="${pin.title}">
-        <div class="pin-actions">
-          <button class="pin-save-btn" onclick="event.stopPropagation(); savePin('${pin.id}')">حفظ</button>
-        </div>
-        ${isAdmin ? `<button class="delete-pin-btn" onclick="event.stopPropagation(); deletePin('${pin.id}')"><i class="fas fa-trash"></i></button>` : ''}
-        <div class="pin-footer">
-          <div class="pin-creator-avatar">ز</div>
-          <div class="pin-info">
-            <div class="pin-title">${pin.title}</div>
-            <div class="pin-creator">${pin.creator}</div>
-          </div>
-        </div>
-      </div>
-    `;
-  });
-  pinsGrid.innerHTML = html;
+// Video player
+function playVideo(url, title) {
+    document.getElementById('videoPlayer').src = url;
+    document.getElementById('videoModal').style.display = 'flex';
 }
 
-function openPin(pinId, imageUrl, title) {
-  currentPinId = pinId;
-  document.getElementById('modalImage').src = imageUrl;
-  document.getElementById('modalTitle').textContent = title;
-  modalDeleteBtn.style.display = isAdmin ? 'block' : 'none';
-  document.getElementById('pinModal').style.display = 'flex';
+function closeModal() {
+    document.getElementById('videoModal').style.display = 'none';
+    document.getElementById('videoPlayer').src = '';
 }
 
-function closePinModal() {
-  document.getElementById('pinModal').style.display = 'none';
-  currentPinId = null;
-}
-
-function deletePin(pinId) {
-  if (!isAdmin) {
-    alert('فقط الأدمن يمكنه حذف الصور');
-    return;
-  }
-  
-  if (confirm('هل أنت متأكد من حذف هذه الصورة؟')) {
-    const pinRef = database.ref('pins/' + pinId);
-    pinRef.remove().then(() => {
-      loadPins();
-      if (currentPinId === pinId) {
-        closePinModal();
-      }
-    });
-  }
-}
-
-function deleteCurrentPin() {
-  if (currentPinId) {
-    deletePin(currentPinId);
-  }
-}
-
-function deleteAllPins() {
-  if (!isAdmin) {
-    alert('فقط الأدمن يمكنه حذف جميع الصور');
-    return;
-  }
-  
-  if (confirm('تحذير: سيتم حذف جميع الصور نهائياً! هل أنت متأكد؟')) {
-    database.ref('pins').remove().then(() => {
-      loadPins();
-      alert('تم حذف جميع الصور بنجاح');
-    });
-  }
-}
-
-function resetToDefault() {
-  if (!isAdmin) {
-    alert('فقط الأدمن يمكنه استعادة المحتوى');
-    return;
-  }
-  
-  if (confirm('استعادة المحتوى الافتراضي؟')) {
-    database.ref('boards').set(sampleBoards);
-    database.ref('pins').remove();
-    location.reload();
-  }
-}
-
-function savePin(pinId) {
-  if (!currentUser) {
-    showAuthModal();
-    return;
-  }
-  alert('تم حفظ الصورة!');
-}
-
-function switchTab(tab) {
-  currentTab = tab;
-  const tabs = document.querySelectorAll('.tab');
-  tabs.forEach(t => t.classList.remove('active'));
-  event.target.classList.add('active');
-  
-  if (tab === 'created') {
-    boardsContainer.classList.remove('hidden');
-    pinsContainer.classList.add('hidden');
-  } else {
-    boardsContainer.classList.add('hidden');
-    pinsContainer.classList.remove('hidden');
-    loadPins();
-  }
+function showUpgradePrompt() {
+    if (confirm('🔒 This is premium content. Would you like to upgrade your subscription?')) {
+        showSignupModal();
+    }
 }
 
 // Cloudinary Upload Widget
 let uploadWidget;
-function initUploadWidget() {
-  uploadWidget = cloudinary.createUploadWidget({
-    cloudName: CLOUDINARY_CLOUD_NAME,
-    uploadPreset: CLOUDINARY_UPLOAD_PRESET,
-    sources: ['local', 'url', 'camera'],
-    multiple: true,
-    folder: 'pinterest_clone',
-    resourceType: 'image',
-    clientAllowedFormats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
-    maxFileSize: 10000000,
-    styles: {
-      palette: {
-        window: "#FFFFFF",
-        windowBorder: "#E60023",
-        tabIcon: "#E60023",
-        menuIcons: "#E60023",
-        textDark: "#211922",
-        textLight: "#767676",
-        link: "#E60023",
-        action: "#E60023",
-        inProgress: "#E60023",
-        complete: "#00C853",
-        error: "#FF1744"
-      }
-    }
-  }, (error, result) => {
-    if (!error && result && result.event === "success") {
-      const pinData = {
-        title: result.info.original_filename || 'صورة جديدة',
-        image: result.info.secure_url,
-        creator: currentUser?.email?.split('@')[0] || 'Zeina_Sowary',
-        board: 'صور سوشيال ميديا',
-        timestamp: Date.now()
-      };
-      
-      database.ref('pins').push(pinData).then(() => {
-        loadPins();
-      });
-    }
-    
-    if (error) {
-      console.error('Upload error:', error);
-    }
-  });
-}
 
-function openUploadWidget() {
-  if (!currentUser) {
-    showAuthModal();
-    return;
-  }
-  
-  if (!uploadWidget) {
-    initUploadWidget();
-  }
-  
-  uploadWidget.open();
-}
-
-// Auth functions
-function showAuthModal() {
-  document.getElementById('authModal').style.display = 'flex';
-}
-
-function closeAuthModal() {
-  document.getElementById('authModal').style.display = 'none';
-}
-
-function login() {
-  const email = document.getElementById('authEmail').value;
-  const password = document.getElementById('authPassword').value;
-  
-  if (!email || !password) {
-    alert('الرجاء إدخال البريد الإلكتروني وكلمة المرور');
-    return;
-  }
-  
-  auth.signInWithEmailAndPassword(email, password)
-    .then(() => {
-      closeAuthModal();
-      document.getElementById('authEmail').value = '';
-      document.getElementById('authPassword').value = '';
-      
-      if (email === ADMIN_EMAIL) {
-        alert('✅ مرحباً بك يا أدمن! يمكنك الآن حذف الصور واللوحات.');
-      }
-    })
-    .catch(error => {
-      if (error.code === 'auth/user-not-found') {
-        auth.createUserWithEmailAndPassword(email, password)
-          .then(() => {
-            closeAuthModal();
-            document.getElementById('authEmail').value = '';
-            document.getElementById('authPassword').value = '';
-            
-            if (email === ADMIN_EMAIL) {
-              alert('✅ تم إنشاء حساب الأدمن بنجاح!');
+function initCloudinaryWidget() {
+    uploadWidget = cloudinary.createUploadWidget({
+        cloudName: CLOUDINARY_CLOUD_NAME, // من firebase-config.js
+        uploadPreset: CLOUDINARY_UPLOAD_PRESET,
+        sources: ['local', 'url', 'camera'],
+        multiple: false,
+        folder: 'playboytv_content',
+        resourceType: 'auto',
+        clientAllowedFormats: ['mp4', 'mov', 'avi', 'webm', 'jpg', 'png'],
+        maxFileSize: 500000000, // 500MB
+        styles: {
+            palette: {
+                window: "#0A0A0E",
+                windowBorder: "#D4AF37",
+                tabIcon: "#D4AF37",
+                menuIcons: "#D4AF37",
+                textDark: "#FFFFFF",
+                textLight: "#CCCCCC",
+                link: "#D4AF37",
+                action: "#D4AF37",
+                inProgress: "#D4AF37",
+                complete: "#33CC33",
+                error: "#FF4444"
             }
-          })
-          .catch(err => alert('خطأ: ' + err.message));
-      } else {
-        alert('خطأ: ' + error.message);
-      }
+        }
+    }, (error, result) => {
+        if (!error && result && result.event === "success") {
+            console.log('✅ Upload success:', result.info);
+            
+            // Save to Firebase
+            const videoData = {
+                title: result.info.original_filename || 'Untitled',
+                url: result.info.secure_url,
+                thumbnail: result.info.thumbnail_url || result.info.secure_url.replace('/upload/', '/upload/w_400,h_300,c_fill/'),
+                premiumOnly: true,
+                timestamp: Date.now(),
+                views: 0,
+                uploadedBy: currentUser?.email || 'unknown',
+                cloudinaryId: result.info.public_id
+            };
+            
+            // Ask for title
+            const customTitle = prompt('📝 Enter video title:', videoData.title);
+            if (customTitle) videoData.title = customTitle;
+            
+            // Ask if premium
+            videoData.premiumOnly = confirm('🔒 Make this premium content? (Only subscribers can watch)');
+            
+            // Save to Firebase
+            database.ref('videos').push(videoData).then(() => {
+                document.getElementById('uploadStatus').innerHTML = '✅ Uploaded successfully!';
+                document.getElementById('uploadStatus').style.color = '#33CC33';
+                loadVideos();
+                
+                // Clear file input
+                document.getElementById('videoFile').value = '';
+            });
+        }
+        
+        if (error) {
+            console.error('❌ Upload error:', error);
+            document.getElementById('uploadStatus').innerHTML = '❌ Upload failed: ' + error.message;
+            document.getElementById('uploadStatus').style.color = '#FF4444';
+        }
     });
 }
 
-function switchToSignup() {
-  alert('سيتم إنشاء حساب جديد تلقائياً');
+function uploadToCloudinary() {
+    if (!currentUser) {
+        alert('⚠️ Please login to upload content');
+        showLoginModal();
+        return;
+    }
+    
+    if (!uploadWidget) {
+        initCloudinaryWidget();
+    }
+    
+    uploadWidget.open();
 }
 
-function handleFollow() {
-  if (!currentUser) {
-    showAuthModal();
-    return;
-  }
-  
-  const btn = document.getElementById('followBtn');
-  if (btn.textContent === 'متابعة') {
-    btn.textContent = 'متابَع';
-    const countSpan = document.getElementById('followerCount');
-    const currentCount = parseFloat(countSpan.textContent);
-    countSpan.textContent = (currentCount + 0.1).toFixed(1);
-  } else {
-    btn.textContent = 'متابعة';
-    const countSpan = document.getElementById('followerCount');
-    const currentCount = parseFloat(countSpan.textContent);
-    countSpan.textContent = (currentCount - 0.1).toFixed(1);
-  }
+// File input handler
+document.getElementById('videoFile').addEventListener('change', function(e) {
+    if (this.files[0]) {
+        const file = this.files[0];
+        const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
+        document.getElementById('uploadStatus').innerHTML = `📁 Selected: ${file.name} (${sizeInMB} MB)`;
+        document.getElementById('uploadStatus').style.color = '#D4AF37';
+    }
+});
+
+// Auth functions
+function showLoginModal() {
+    document.getElementById('loginModal').style.display = 'flex';
 }
 
-function toggleAdminPanel() {
-  if (adminPanel.style.display === 'block') {
-    adminPanel.style.display = 'none';
-  } else {
-    adminPanel.style.display = 'block';
-  }
+function closeLoginModal() {
+    document.getElementById('loginModal').style.display = 'none';
 }
 
-// Initialize
-loadBoards();
-console.log('🎨 Pinterest Clone Ready - Admin:', ADMIN_EMAIL);
+function showSignupModal() {
+    document.getElementById('signupModal').style.display = 'flex';
+}
+
+function closeSignupModal() {
+    document.getElementById('signupModal').style.display = 'none';
+}
+
+function login() {
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    
+    if (!email || !password) {
+        alert('Please enter email and password');
+        return;
+    }
+    
+    auth.signInWithEmailAndPassword(email, password)
+        .then(() => {
+            closeLoginModal();
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginPassword').value = '';
+        })
+        .catch(error => {
+            alert('❌ Login failed: ' + error.message);
+        });
+}
+
+function signup() {
+    const email = document.getElementById('signupEmail').value;
+    const password = document.getElementById('signupPassword').value;
+    const plan = document.getElementById('planSelect').value;
+    
+    if (!email || !password) {
+        alert('Please enter email and password');
+        return;
+    }
+    
+    if (password.length < 6) {
+        alert('Password must be at least 6 characters');
+        return;
+    }
+    
+    auth.createUserWithEmailAndPassword(email, password)
+        .then(userCredential => {
+            // Save subscription
+            return database.ref('subscriptions/' + userCredential.user.uid).set({
+                plan: plan,
+                email: email,
+                createdAt: Date.now(),
+                status: 'active'
+            });
+        })
+        .then(() => {
+            closeSignupModal();
+            alert('✅ Account created successfully! Welcome to PlayboyTV');
+            
+            // Clear form
+            document.getElementById('signupEmail').value = '';
+            document.getElementById('signupPassword').value = '';
+            
+            // Make first user admin if it's jasim28v@gmail.com
+            if (email === ADMIN_EMAIL) {
+                database.ref('admins/' + auth.currentUser.uid).set({
+                    email: email,
+                    role: 'super_admin',
+                    createdAt: Date.now()
+                });
+            }
+        })
+        .catch(error => {
+            alert('❌ Signup failed: ' + error.message);
+        });
+}
+
+function logout() {
+    auth.signOut().then(() => {
+        ageGate.style.display = 'flex';
+        mainContent.style.display = 'none';
+        localStorage.removeItem('age_verified');
+    });
+}
+
+// Initialize sample videos for testing (only if database is empty)
+function initializeSampleContent() {
+    database.ref('videos').once('value').then(snapshot => {
+        if (!snapshot.exists()) {
+            const sampleVideos = {
+                sample1: {
+                    title: "🎬 Welcome to PlayboyTV",
+                    url: "https://res.cloudinary.com/do33_x/video/upload/v1/playboytv_content/welcome",
+                    thumbnail: "https://res.cloudinary.com/do33_x/image/upload/w_400,h_300,c_fill/v1/playboytv_content/welcome",
+                    premiumOnly: false,
+                    timestamp: Date.now(),
+                    views: 0,
+                    uploadedBy: ADMIN_EMAIL
+                }
+            };
+            
+            database.ref('videos').set(sampleVideos).then(() => {
+                console.log('📹 Sample content added');
+                loadVideos();
+            });
+        }
+    });
+}
+
+// Run initialization
+setTimeout(initializeSampleContent, 2000);
+
+console.log('🎬 PlayboyTV System Ready');
+console.log('☁️ Cloudinary Cloud:', CLOUDINARY_CLOUD_NAME);
+console.log('📁 Collection:', CLOUDINARY_COLLECTION);
